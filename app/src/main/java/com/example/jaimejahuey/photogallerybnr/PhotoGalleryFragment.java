@@ -41,7 +41,7 @@ public class PhotoGalleryFragment extends Fragment
     {
         View v = inflater.inflate(R.layout.fragment_photo_gallery, container,false);
 
-        mPhotoRecyclerView = (RecyclerView) v.findViewById(R.id.fragment_photo_gallery_recyclerView);
+        mPhotoRecyclerView = v.findViewById(R.id.fragment_photo_gallery_recyclerView);
         mPhotoRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
 
         setUpAdater();
@@ -50,6 +50,7 @@ public class PhotoGalleryFragment extends Fragment
     }
 
     private void setUpAdater(){
+        //Confirms that the fragment has been attached to an activity so that getActivyt is not null in the adapter
         if(isAdded()){
             mPhotoRecyclerView.setAdapter(new PhotoAdapter(mItems));
         }
@@ -98,6 +99,8 @@ public class PhotoGalleryFragment extends Fragment
         }
 
 
+        //Inflate the view.
+        //Passing the view to the photoHolder so that we can get references to the id of the things in the view
         @Override
         public PhotoHolder onCreateViewHolder(ViewGroup viewGroup, int viewType)
         {
@@ -105,6 +108,7 @@ public class PhotoGalleryFragment extends Fragment
             return new PhotoHolder(textView);
         }
 
+        //Set the data, now that view has been created. View we get is the photoHolder.
         @Override
         public void onBindViewHolder(PhotoHolder photoHolder, int pos)
         {

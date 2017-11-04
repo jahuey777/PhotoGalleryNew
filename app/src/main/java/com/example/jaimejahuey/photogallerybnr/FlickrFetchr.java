@@ -3,6 +3,10 @@ package com.example.jaimejahuey.photogallerybnr;
 import android.net.Uri;
 import android.util.Log;
 
+import com.example.jaimejahuey.photogallerybnr.model.PhotosResponse;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,6 +14,8 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -26,13 +32,14 @@ public class FlickrFetchr
     public byte [] getUrlBytes(String urlSpec) throws IOException
     {
         URL url = new URL(urlSpec);
-        //Creates the connection with the URL
+        //Represents a connection with the URL, but isn't connected until getinputstream or getoutpustream is called
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
         try
         {
             //Storing all the bytes into the out ByteArray
             ByteArrayOutputStream out = new ByteArrayOutputStream();
+            //
             InputStream in = connection.getInputStream();
 
             //Making sure the connection is ok.
@@ -65,14 +72,19 @@ public class FlickrFetchr
         List<GalleryItem> items = new ArrayList<>();
 
         try {
-            String url = Uri.parse("https://api.flickr.com/services/rest/").buildUpon().appendQueryParameter("method", "flickr.photos.getRecent")
-                    .appendQueryParameter("api_key", API_KEY).appendQueryParameter("format", "json").appendQueryParameter("nojsoncallback","1")
-                    .appendQueryParameter("extras","url_s").build().toString();
+            String url = Uri.parse("https://api.flickr.com/services/rest/").buildUpon()
+                    .appendQueryParameter("method", "flickr.photos.getRecent")
+                    .appendQueryParameter("api_key", API_KEY)
+                    .appendQueryParameter("format", "json")
+                    .appendQueryParameter("nojsoncallback","1")
+                    .appendQueryParameter("extras","url_s")
+                    .build().toString();
             //extras, url_s tells flickR to include the URL for the small version of he picture if avaiable
 
             String jsonString = null;
             jsonString = getUrlString(url);
 
+            Log.v(TAG, " " + url);
             Log.i(TAG, "received JSON: " + jsonString);
 
             JSONObject jsonBody = new JSONObject(jsonString);
@@ -85,14 +97,23 @@ public class FlickrFetchr
             Log.e(TAG, "Failed to parse JSon",e);
         }
 
+        Log.v("Items " , " lenght is" + items.size());
         return items;
     }
 
     private void parseItems(List<GalleryItem> items, JSONObject jsonBody) throws IOException, JSONException {
 
+
+        //Using GSON
+
         //JsonBody is the top most level.
         //Grabbing photos and then will graby jsonArray inside photosJsonObject
         JSONObject photosJsonObject = jsonBody.getJSONObject("photos");
+
+        Gson gson = new GsonBuilder().create();
+        Log.v("Array size using gSon", " "  + jsonBody.toString());
+        PhotosResponse photosResponse = gson.fromJson(jsonBody.toString(), PhotosResponse.class);
+        Log.v("Array size using gSon", " "  + photosResponse.getPhotos().size());
 
         JSONArray photoJsonArray = photosJsonObject.getJSONArray("photo");
 
@@ -103,12 +124,14 @@ public class FlickrFetchr
             item.setmId(photoJsonObject.getString("id"));
             item.setmCaption(photoJsonObject.getString("title"));
 
-            //checking for url
+            //checking if image has a url, we skip if it does not
             if(!photoJsonObject.has("url_s"))
                 continue;
+
             item.setmUrl(photoJsonObject.getString("url_s"));
             items.add(item);
         }
 
+        Log.v("PhotojsonArray size: " , " " + photoJsonArray.length());
     }
 }

@@ -1,8 +1,11 @@
 package com.example.jaimejahuey.photogallerybnr;
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -25,6 +28,7 @@ public class PhotoGalleryFragment extends Fragment
     private static final String TAG = "PhotoGalleryFragment";
 
     private RecyclerView mPhotoRecyclerView;
+    private PhotoAdapter mPhotoAdapter;
     private List<GalleryItem> mItems = new ArrayList<>();
     private int mpageNum = 0;
 
@@ -42,10 +46,21 @@ public class PhotoGalleryFragment extends Fragment
         setRetainInstance(true);
         new FetchItemsTask().execute();
 
-        mThumbnailDownloader = new ThumbnailDownloader<>();
+        Handler responseHandler = new Handler();
+
+        //passing the main threads handler to the other thread so that we can update the UI whenever the photo is downloaded
+        mThumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
+        //Setting the lister.
+        mThumbnailDownloader.setThumbnailDownloadListener(new ThumbnailDownloader.ThumbnailDownloadListener<PhotoHolder>() {
+            @Override
+            public void onThumbnailDownloaded(PhotoHolder target, Bitmap thumbnail) {
+                Drawable drawable = new BitmapDrawable(getResources(), thumbnail);
+                target.bindDrawable(drawable);
+            }
+        });
+
         mThumbnailDownloader.start();
         mThumbnailDownloader.getLooper();
-        Log.i(TAG, "Background thread started");
     }
 
     @Override
@@ -66,24 +81,37 @@ public class PhotoGalleryFragment extends Fragment
         super.onDestroy();
 
         mThumbnailDownloader.quit();
-        Log.i(TAG, "Background thread destoyed");
+        Log.i(TAG, "Background thread destroyed");
+    }
+
+    @Override
+    public void onDestroyView(){
+        super.onDestroyView();
+
+        mThumbnailDownloader.clearQueue();
+        Log.i(TAG, "onDestroyView called");
     }
 
     private void setUpAdater(){
 
         //Confirms that the fragment has been attached to an activity so that getActivyt is not null in the adapter
         if(isAdded()){
-            mPhotoRecyclerView.setAdapter(new PhotoAdapter(mItems));
-            mPhotoRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-                @Override
-                public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                    super.onScrollStateChanged(recyclerView, newState);
+            if(mPhotoAdapter==null){
+                mPhotoAdapter= new PhotoAdapter(mItems);
+                mPhotoRecyclerView.setAdapter(mPhotoAdapter);
+            }else{
+                mPhotoAdapter.notifyDataSetChanged();
+            }
 
-                    if(!recyclerView.canScrollVertically(1)){
-                        new FetchItemsTask().execute();
-                    }
-                }
-            });
+//            mPhotoRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+//                @Override
+//                public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+//                    super.onScrollStateChanged(recyclerView, newState);
+//
+//                    if(!recyclerView.canScrollVertically(1)){
+//                    }
+//                }
+//            });
         }
 
     }
@@ -102,8 +130,8 @@ public class PhotoGalleryFragment extends Fragment
             //Add items since we fetch new items whenever the user hits the bottom of the list
 //            mItems = items;
             mItems.addAll(items);
+            Log.v("After network size"," " + mItems.size());
             setUpAdater();
-
         }
     }
 
@@ -158,6 +186,11 @@ public class PhotoGalleryFragment extends Fragment
             GalleryItem galleryItem = mGalleryItems.get(pos);
 //            photoHolder.bindGalleryItem(galleryItem);
             mThumbnailDownloader.queueThumbnail(photoHolder, galleryItem.getmUrl());
+
+            if(pos==mItems.size()-1){
+                new FetchItemsTask().execute();
+            }
+
         }
 
         @Override

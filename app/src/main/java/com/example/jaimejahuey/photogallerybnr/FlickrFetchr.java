@@ -1,7 +1,9 @@
 package com.example.jaimejahuey.photogallerybnr;
 
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.util.Log;
+import android.util.LruCache;
 
 import com.example.jaimejahuey.photogallerybnr.model.PhotosResponse;
 import com.google.gson.Gson;
@@ -127,6 +129,11 @@ public class FlickrFetchr
             //checking if image has a url, we skip if it does not
             if(!photoJsonObject.has("url_s"))
                 continue;
+
+            //Only loading 20 at a time
+            if(i==20){
+                break;
+            }
 
             item.setmUrl(photoJsonObject.getString("url_s"));
             items.add(item);

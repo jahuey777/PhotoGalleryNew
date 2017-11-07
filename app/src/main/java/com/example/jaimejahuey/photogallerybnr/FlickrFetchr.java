@@ -160,8 +160,8 @@ public class FlickrFetchr
             if(!photoJsonObject.has("url_s"))
                 continue;
 
-            //Only loading 20 at a time
-            if(i==20){
+            //Only loading 30 at a time
+            if(i==30){
                 break;
             }
 

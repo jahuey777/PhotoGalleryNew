@@ -1,5 +1,6 @@
 package com.example.jaimejahuey.photogallerybnr;
 
+import android.app.ProgressDialog;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -16,6 +17,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 import android.widget.SearchView;
 import android.widget.TextView;
@@ -83,7 +85,7 @@ public class PhotoGalleryFragment extends Fragment
         mPhotoRecyclerView = v.findViewById(R.id.fragment_photo_gallery_recyclerView);
         mPhotoRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
 
-        setUpAdater();
+        setUpAdater(false);
 
         return v;
     }
@@ -117,7 +119,8 @@ public class PhotoGalleryFragment extends Fragment
             public boolean onQueryTextSubmit(String query) {
                 Log.v(TAG, " QueryTextSubmit "+ query);
                 QueryPreferences.setStoreQuery(getActivity(), query);
-                updateItems();
+                new FetchItemsTask(query, true).execute();
+                hideKeyboard();
                 return true;
             }
 
@@ -151,13 +154,23 @@ public class PhotoGalleryFragment extends Fragment
     private void updateItems(){
         String query = QueryPreferences.getStoredQuery(getActivity());
         new FetchItemsTask(query).execute();
+        hideKeyboard();
     }
 
-    private void setUpAdater(){
+    private void hideKeyboard(){
+        View view = getActivity().getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(getContext().INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
+
+    private void setUpAdater(boolean createNewAdapter){
 
         //Confirms that the fragment has been attached to an activity so that getActivyt is not null in the adapter
         if(isAdded()){
-            if(mPhotoAdapter==null){
+            if(mPhotoAdapter == null||createNewAdapter){
                 mPhotoAdapter= new PhotoAdapter(mItems);
                 mPhotoRecyclerView.setAdapter(mPhotoAdapter);
             }else{
@@ -180,28 +193,60 @@ public class PhotoGalleryFragment extends Fragment
     private class FetchItemsTask extends AsyncTask<Void, Void, List<GalleryItem>>
     {
         private String mQuery;
+        private  boolean mNewSearch;
+        ProgressDialog mProgressDialog;
 
         public FetchItemsTask(String query){
             mQuery = query;
+            mNewSearch = false;
+        }
+
+        public FetchItemsTask(String query, boolean newSearch){
+            mQuery = query;
+            mNewSearch = newSearch;
+        }
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+            mProgressDialog = new ProgressDialog(getActivity());
+
+            mProgressDialog.setMessage("Loading...");
+            mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            mProgressDialog.setIndeterminate(true);
+            mProgressDialog.show();
         }
 
         @Override
         protected List<GalleryItem> doInBackground(Void... params) {
 
 //               return new FlickrFetchr().fetchItems();
-            if (mQuery==null){
+            if (mQuery == null){
                 return new FlickrFetchr().fetchRecentPhotos();
-            }else
+            }else{
                 return new FlickrFetchr().searchPhotos(mQuery);
+            }
         }
 
         @Override
         protected void onPostExecute(List<GalleryItem> items){
             //Add items since we fetch new items whenever the user hits the bottom of the list
 //            mItems = items;
-            mItems.addAll(items);
+            if(mProgressDialog!=null &&mProgressDialog.isShowing()){
+                mProgressDialog.hide();
+            }
+
+            if (mNewSearch){
+                mItems = new ArrayList<>();
+                mItems.addAll(items);
+                setUpAdater(true);
+
+            }else{
+                mItems.addAll(items);
+                setUpAdater(false);
+            }
+
             Log.v("After network size"," " + mItems.size());
-            setUpAdater();
         }
     }
 
@@ -236,7 +281,6 @@ public class PhotoGalleryFragment extends Fragment
             mGalleryItems = galleryItems;
         }
 
-
         //Inflate the view.
         //Passing the view to the photoHolder so that we can get references to the id of the things in the view
         @Override
@@ -258,7 +302,8 @@ public class PhotoGalleryFragment extends Fragment
 //            mThumbnailDownloader.queueThumbnail(photoHolder, galleryItem.getmUrl());
             Picasso.with(getActivity()).load(galleryItem.getmUrl()).into(photoHolder.mItemImageView);
 
-            if(pos==mItems.size()-1){
+            if(pos == mItems.size()-1){
+                Log.v("Hitting", " the last item");
                 updateItems();
             }
 

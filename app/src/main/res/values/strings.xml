@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">PhotoGalleryBNR</string>
+    <string name="clear_serach">Clear search</string>
 </resources>

@@ -51,11 +51,15 @@ public class PhotoGalleryFragment extends Fragment
         //passing the main threads handler to the other thread so that we can update the UI whenever the photo is downloaded
         mThumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
         //Setting the lister.
+
         mThumbnailDownloader.setThumbnailDownloadListener(new ThumbnailDownloader.ThumbnailDownloadListener<PhotoHolder>() {
             @Override
             public void onThumbnailDownloaded(PhotoHolder target, Bitmap thumbnail) {
-                Drawable drawable = new BitmapDrawable(getResources(), thumbnail);
-                target.bindDrawable(drawable);
+
+                if(isAdded()){
+                    Drawable drawable = new BitmapDrawable(getResources(), thumbnail);
+                    target.bindDrawable(drawable);
+                }
             }
         });
 
@@ -122,7 +126,12 @@ public class PhotoGalleryFragment extends Fragment
         @Override
         protected List<GalleryItem> doInBackground(Void... params) {
 
-               return new FlickrFetchr().fetchItems();
+            String query = "Robot";
+//               return new FlickrFetchr().fetchItems();
+            if (query==null){
+                return new FlickrFetchr().fetchRecentPhotos();
+            }else
+                return new FlickrFetchr().searchPhotos(query);
         }
 
         @Override

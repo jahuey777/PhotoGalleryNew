@@ -21,6 +21,8 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.squareup.picasso.Picasso;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +38,7 @@ public class PhotoGalleryFragment extends Fragment
     private List<GalleryItem> mItems = new ArrayList<>();
     private int mpageNum = 0;
 
-    private ThumbnailDownloader<PhotoHolder> mThumbnailDownloader;
+//    private ThumbnailDownloader<PhotoHolder> mThumbnailDownloader;
 
     public static PhotoGalleryFragment newInstance()
     {
@@ -52,25 +54,25 @@ public class PhotoGalleryFragment extends Fragment
 //        new FetchItemsTask().execute();
         updateItems();
 
-        Handler responseHandler = new Handler();
-
-        //passing the main threads handler to the other thread so that we can update the UI whenever the photo is downloaded
-        mThumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
-        //Setting the lister.
-
-        mThumbnailDownloader.setThumbnailDownloadListener(new ThumbnailDownloader.ThumbnailDownloadListener<PhotoHolder>() {
-            @Override
-            public void onThumbnailDownloaded(PhotoHolder target, Bitmap thumbnail) {
-
-                if(isAdded()){
-                    Drawable drawable = new BitmapDrawable(getResources(), thumbnail);
-                    target.bindDrawable(drawable);
-                }
-            }
-        });
-
-        mThumbnailDownloader.start();
-        mThumbnailDownloader.getLooper();
+//        Handler responseHandler = new Handler();
+//
+//        //passing the main threads handler to the other thread so that we can update the UI whenever the photo is downloaded
+//        mThumbnailDownloader = new ThumbnailDownloader<>(responseHandler);
+//        //Setting the lister.
+//
+//        mThumbnailDownloader.setThumbnailDownloadListener(new ThumbnailDownloader.ThumbnailDownloadListener<PhotoHolder>() {
+//            @Override
+//            public void onThumbnailDownloaded(PhotoHolder target, Bitmap thumbnail) {
+//
+//                if(isAdded()){
+//                    Drawable drawable = new BitmapDrawable(getResources(), thumbnail);
+//                    target.bindDrawable(drawable);
+//                }
+//            }
+//        });
+//
+//        mThumbnailDownloader.start();
+//        mThumbnailDownloader.getLooper();
     }
 
     @Override
@@ -90,7 +92,7 @@ public class PhotoGalleryFragment extends Fragment
     public void onDestroy(){
         super.onDestroy();
 
-        mThumbnailDownloader.quit();
+//        mThumbnailDownloader.quit();
         Log.i(TAG, "Background thread destroyed");
     }
 
@@ -98,7 +100,7 @@ public class PhotoGalleryFragment extends Fragment
     public void onDestroyView(){
         super.onDestroyView();
 
-        mThumbnailDownloader.clearQueue();
+//        mThumbnailDownloader.clearQueue();
         Log.i(TAG, "onDestroyView called");
     }
 
@@ -108,9 +110,9 @@ public class PhotoGalleryFragment extends Fragment
 
         menuInflater.inflate(R.menu.fragment_photo_gallery, menu);
         MenuItem searchItem = menu.findItem(R.id.menu_item_search);
-        final SearchView searchView = (SearchView) searchItem.getActionView();
+        final android.support.v7.widget.SearchView searchView = (android.support.v7.widget.SearchView) searchItem.getActionView();
 
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+        searchView.setOnQueryTextListener(new android.support.v7.widget.SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 Log.v(TAG, " QueryTextSubmit "+ query);
@@ -253,7 +255,8 @@ public class PhotoGalleryFragment extends Fragment
         {
             GalleryItem galleryItem = mGalleryItems.get(pos);
 //            photoHolder.bindGalleryItem(galleryItem);
-            mThumbnailDownloader.queueThumbnail(photoHolder, galleryItem.getmUrl());
+//            mThumbnailDownloader.queueThumbnail(photoHolder, galleryItem.getmUrl());
+            Picasso.with(getActivity()).load(galleryItem.getmUrl()).into(photoHolder.mItemImageView);
 
             if(pos==mItems.size()-1){
                 updateItems();

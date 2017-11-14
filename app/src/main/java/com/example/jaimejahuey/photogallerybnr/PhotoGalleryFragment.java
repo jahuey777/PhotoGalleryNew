@@ -1,6 +1,7 @@
 package com.example.jaimejahuey.photogallerybnr;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -55,6 +56,11 @@ public class PhotoGalleryFragment extends Fragment
         setHasOptionsMenu(true);
 //        new FetchItemsTask().execute();
         updateItems();
+
+//        Intent i = PollService.newIntent(getActivity());
+//        getActivity().startService(i);
+
+//        PollService.setServiceAlarm(getActivity(), true);
 
 //        Handler responseHandler = new Handler();
 //
@@ -138,6 +144,13 @@ public class PhotoGalleryFragment extends Fragment
                 searchView.setQuery(query,false);
             }
         });
+
+        MenuItem toggleItem = menu.findItem(R.id.menu_item_toggle_polling);
+        if(!PollService.isServiceAlarmOn(getActivity())){
+            toggleItem.setTitle(R.string.stop_polling);
+        }else{
+            toggleItem.setTitle(R.string.start_polling);
+        }
     }
 
     @Override
@@ -146,6 +159,14 @@ public class PhotoGalleryFragment extends Fragment
             case R.id.menu_item_clear:
                 QueryPreferences.setStoreQuery(getActivity(), null);
                 updateItems();
+                return true;
+            case R.id.menu_item_toggle_polling:
+                //If service alarm is on, then we don't want it to create anothe PendingIntent
+                boolean shoudStartAlarm = !PollService.isServiceAlarmOn(getActivity());
+                PollService.setServiceAlarm(getActivity(), shoudStartAlarm);
+
+                //Update the toolbar
+                getActivity().invalidateOptionsMenu();
                 return true;
             default: return super.onOptionsItemSelected(item);
         }
@@ -214,6 +235,8 @@ public class PhotoGalleryFragment extends Fragment
             mProgressDialog.setMessage("Loading...");
             mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
             mProgressDialog.setIndeterminate(true);
+
+            if(mProgressDialog!=null)
             mProgressDialog.show();
         }
 
@@ -233,7 +256,7 @@ public class PhotoGalleryFragment extends Fragment
             //Add items since we fetch new items whenever the user hits the bottom of the list
 //            mItems = items;
             if(mProgressDialog!=null &&mProgressDialog.isShowing()){
-                mProgressDialog.hide();
+                mProgressDialog.dismiss();
             }
 
             if (mNewSearch){
@@ -303,7 +326,6 @@ public class PhotoGalleryFragment extends Fragment
             Picasso.with(getActivity()).load(galleryItem.getmUrl()).into(photoHolder.mItemImageView);
 
             if(pos == mItems.size()-1){
-                Log.v("Hitting", " the last item");
                 updateItems();
             }
 

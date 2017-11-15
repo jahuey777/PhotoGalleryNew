@@ -161,7 +161,7 @@ public class PhotoGalleryFragment extends Fragment
                 updateItems();
                 return true;
             case R.id.menu_item_toggle_polling:
-                //If service alarm is on, then we don't want it to create anothe PendingIntent
+                //If service alarm is on, then we don't want it to create another PendingIntent
                 boolean shoudStartAlarm = !PollService.isServiceAlarmOn(getActivity());
                 PollService.setServiceAlarm(getActivity(), shoudStartAlarm);
 

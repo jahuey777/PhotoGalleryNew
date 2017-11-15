@@ -45,6 +45,8 @@ public class PollService extends IntentService {
             pi.cancel();
         }
 
+        QueryPreferences.setAlarmOn(context, isOn);
+
     }
 
     //Tells us whether the alarm is on or not
